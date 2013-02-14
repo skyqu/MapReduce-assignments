@@ -43,8 +43,13 @@ public class WordCount extends Configured implements Tool {
       String line = ((Text) value).toString();
       StringTokenizer itr = new StringTokenizer(line);
       while (itr.hasMoreTokens()) {
-        WORD.set(itr.nextToken());
-        context.write(WORD, ONE);
+    	String pword=itr.nextToken();
+    	if(pword.matches("[A-Za-z]+"))
+        {
+    		WORD.set(pword);
+    		context.write(WORD, ONE);
+        }
+        
       }
     }
   }

@@ -12,6 +12,11 @@
       <filesystem name="libraries">
         <artifact pattern="${basedir}/ivy/local-repo/[artifact]-[revision].[ext]" />
       </filesystem>
+
+      <filesystem name="libraries">
+        <artifact pattern="${basedir}/ivy/local-repo/[artifact]-[revision].[ext]" />
+      </filesystem>    
+
     </chain>
   </resolvers>
 </ivysettings>
