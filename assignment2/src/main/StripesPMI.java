@@ -52,6 +52,7 @@ public class StripesPMI extends Configured implements Tool {
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
       String[] terms =line.split("\\s+");
+      //System.out.print("Mapper works\n\n\n\n");
       for (int i=0;i<terms.length;i++)
       {
     	  if( terms[i].equals("\0")) continue;
@@ -65,7 +66,7 @@ public class StripesPMI extends Configured implements Tool {
     	  
       }
       
-      
+      //System.out.print("for loop1 works\n\n\n\n");
       for (int i=0;i<terms.length;i++)
       {
     	  String term =terms[i];
@@ -89,7 +90,7 @@ public class StripesPMI extends Configured implements Tool {
     	  KEY.set(term);
     	  context.write(KEY,MAP);
       }
-    
+      //System.out.print("all works\n\n\n\n");
     }
   }
   
@@ -352,12 +353,9 @@ public class StripesPMI extends Configured implements Tool {
     job1.setJarByClass(StripesPMI.class);
 
     job1.setNumReduceTasks(reduceTasks);
-
+    //System.out.print("1 works\n\n\n\n");
     FileInputFormat.setInputPaths(job1, new Path(inputPath));
     FileOutputFormat.setOutputPath(job1, new Path(outputPath+"A"));
-
-    //job1.setOutputKeyClass(PairOfStrings.class);
-    //job1.setOutputValueClass(FloatWritable.class);
     
     job1.setOutputKeyClass(Text.class);
     job1.setOutputValueClass(String2IntOpenHashMapWritable.class);
@@ -369,15 +367,14 @@ public class StripesPMI extends Configured implements Tool {
     job1.setReducerClass(MyReducer.class);
 
     // Delete the output directory if it exists already.
-    Path outputDir = new Path(outputPath+"A");
+    Path outputDir = new Path(outputPath);
     FileSystem.get(conf).delete(outputDir, true);
-
     long startTime = System.currentTimeMillis();
     job1.waitForCompletion(true);
     LOG.info("Job1 Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
     
     //Have a second job
-   
+    
     Job job2 = Job.getInstance(conf);
     job2.setJobName(StripesPMI.class.getSimpleName());
     job2.setJarByClass(StripesPMI.class);
@@ -407,8 +404,8 @@ public class StripesPMI extends Configured implements Tool {
 //Have a third job
     
     Job job3 = Job.getInstance(conf);
-    job3.setJobName(PairsPMI.class.getSimpleName());
-    job3.setJarByClass(PairsPMI.class);
+    job3.setJobName(StripesPMI.class.getSimpleName());
+    job3.setJarByClass(StripesPMI.class);
 
     job3.setNumReduceTasks(reduceTasks);
 
@@ -430,6 +427,7 @@ public class StripesPMI extends Configured implements Tool {
     long startTime3 = System.currentTimeMillis();
     job3.waitForCompletion(true);
     LOG.info("Job3 Finished in " + (System.currentTimeMillis() - startTime3) / 1000.0 + " seconds");
+    
     
     return 0;
   }
