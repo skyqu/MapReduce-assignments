@@ -14,10 +14,9 @@
  * permissions and limitations under the License.
  */
 
-//package edu.umd.cloud9.example.ir;
+package edu.umd.cloud9.example.ir;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 
@@ -29,6 +28,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,6 +37,7 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
@@ -46,12 +47,17 @@ import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
-public class LookupPostingsCompressed {
+public class LookupPostingsCompressed extends Configured implements Tool {
   private static final String INDEX = "index";
   private static final String COLLECTION = "collection";
 
+  private LookupPostingsCompressed() {}
+
+  /**
+   * Runs this tool.
+   */
   @SuppressWarnings({ "static-access" })
-  public static void main(String[] args) throws IOException {
+  public int run(String[] args) throws Exception {
     Options options = new Options();
 
     options.addOption(OptionBuilder.withArgName("path").hasArg()
@@ -103,9 +109,11 @@ public class LookupPostingsCompressed {
     reader.get(key, value);
 
     ArrayListWritable<PairOfVInts> postings = value.getRightElement();
+    int OFFSET=0;
     for (PairOfVInts pair : postings) {
       System.out.println(pair);
-      collection.seek(pair.getLeftElement());
+      OFFSET = OFFSET + pair.getLeftElement();
+      collection.seek(OFFSET);
       System.out.println(d.readLine());
     }
 
@@ -148,5 +156,14 @@ public class LookupPostingsCompressed {
 
     collection.close();
     reader.close();
+
+    return 0;
+  }
+
+  /**
+   * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
+   */
+  public static void main(String[] args) throws Exception {
+    ToolRunner.run(new LookupPostingsCompressed(), args);
   }
 }
