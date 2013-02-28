@@ -32,6 +32,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -40,23 +41,26 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.util.Tool;
 
 import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
 import edu.umd.cloud9.io.pair.PairOfVInts;
 import edu.umd.cloud9.io.pair.PairOfWritables;
 
-public class BooleanRetrievalCompressed {
-  private final MapFile.Reader index;
-  private final FSDataInputStream collection;
-  private final Stack<Set<Integer>> stack;
+public class BooleanRetrievalCompressed extends Configured implements Tool{
+  private MapFile.Reader index;
+  private FSDataInputStream collection;
+  private Stack<Set<Integer>> stack;
 
-  public BooleanRetrievalCompressed(String indexPath, String collectionPath, FileSystem fs) throws IOException {
-    index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
-    collection = fs.open(new Path(collectionPath));
-    stack = new Stack<Set<Integer>>();
-  }
+  public BooleanRetrievalCompressed (){}
 
+  private void initialize(String indexPath, String collectionPath, FileSystem fs) throws IOException {
+	    index = new MapFile.Reader(new Path(indexPath + "/part-r-00000"), fs.getConf());
+	    collection = fs.open(new Path(collectionPath));
+	    stack = new Stack<Set<Integer>>();
+	  }
+  
   public void runQuery(String q) throws IOException {
     String[] terms = q.split("\\s+");
 
@@ -146,8 +150,12 @@ public class BooleanRetrievalCompressed {
   private static final String INDEX = "index";
   private static final String COLLECTION = "collection";
 
+  
+  /**
+   * Runs this tool.
+   */
   @SuppressWarnings({ "static-access" })
-  public static void main(String[] args) throws IOException {
+  public int run(String[] args) throws IOException {
     Options options = new Options();
 
     options.addOption(OptionBuilder.withArgName("path").hasArg()
@@ -184,7 +192,7 @@ public class BooleanRetrievalCompressed {
 
     FileSystem fs = FileSystem.get(new Configuration());
 
-    BooleanRetrievalCompressed s = new BooleanRetrievalCompressed(indexPath, collectionPath, fs);
+    initialize(indexPath, collectionPath, fs);
 
     String[] queries = { "outrageous fortune AND", "white rose AND", "means deceit AND",
         "white red OR rose AND pluck AND", "unhappy outrageous OR good your AND OR fortune AND" };
@@ -192,8 +200,13 @@ public class BooleanRetrievalCompressed {
     for (String q : queries) {
       System.out.println("Query: " + q);
 
-      s.runQuery(q);
+      runQuery(q);
       System.out.println("");
     }
+    return 1;
   }
+  
+  public static void main(String[] args) throws Exception {
+	    ToolRunner.run(new BooleanRetrievalCompressed(), args);
+	  }
 }
