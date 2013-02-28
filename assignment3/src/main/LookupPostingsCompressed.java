@@ -137,8 +137,8 @@ public class LookupPostingsCompressed extends Configured implements Tool {
         OFFSET = OFFSET + WritableUtils.readVInt(in);
         count = WritableUtils.readVInt(in);
         System.out.print("("+OFFSET+", "+count+")");
-        collection.seek(OFFSET);
-        System.out.println(d.readLine());
+        //collection.seek(OFFSET);
+        //System.out.println(d.readLine());
         System.out.print(", ");
     }
     System.out.print("])\n");
@@ -173,8 +173,8 @@ public class LookupPostingsCompressed extends Configured implements Tool {
         OFFSET = OFFSET + WritableUtils.readVInt(in);
         count = WritableUtils.readVInt(in);
         System.out.print("("+OFFSET+", "+count+")");
-        collection.seek(OFFSET);
-        System.out.println(d.readLine());
+        //collection.seek(OFFSET);
+        //System.out.println(d.readLine());
         System.out.print(", ");
     }
     System.out.print("])\n");
