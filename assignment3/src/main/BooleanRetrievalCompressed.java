@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-//package edu.umd.cloud9.example.ir;
+package edu.umd.cloud9.example.ir;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -169,7 +169,7 @@ public class BooleanRetrievalCompressed {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
       formatter.setWidth(120);
-      formatter.printHelp(LookupPostings.class.getName(), options);
+      formatter.printHelp(LookupPostingsCompressed.class.getName(), options);
       ToolRunner.printGenericCommandUsage(System.out);
       System.exit(-1);
     }

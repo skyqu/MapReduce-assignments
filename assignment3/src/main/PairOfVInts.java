@@ -14,7 +14,7 @@
  * permissions and limitations under the License.
  */
 
-//package edu.umd.cloud9.io.pair;
+package edu.umd.cloud9.io.pair;
 
 import java.io.DataInput;
 import java.io.DataOutput;
