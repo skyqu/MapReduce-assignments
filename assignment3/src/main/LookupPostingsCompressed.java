@@ -19,6 +19,8 @@ package edu.umd.cloud9.example.ir;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -32,11 +34,13 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -100,52 +104,98 @@ public class LookupPostingsCompressed extends Configured implements Tool {
     BufferedReader d = new BufferedReader(new InputStreamReader(collection));
 
     Text key = new Text();
-    PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>> value =
-        new PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>>();
+    PairOfWritables<VIntWritable, BytesWritable> value =
+        new PairOfWritables<VIntWritable, BytesWritable>();
 
     System.out.println("Looking up postings for the term \"starcross'd\"");
     key.set("starcross'd");
 
     reader.get(key, value);
 
-    ArrayListWritable<PairOfVInts> postings = value.getRightElement();
+    BytesWritable postings = value.getRightElement();
+    ByteArrayInputStream buffer = new ByteArrayInputStream(postings.copyBytes());
+    DataInputStream in = new DataInputStream(buffer);   
     int OFFSET=0;
-    for (PairOfVInts pair : postings) {
-      System.out.println(pair);
-      OFFSET = OFFSET + pair.getLeftElement();
+    int count;
+    while (in.available()!=0) {
+      OFFSET = OFFSET + WritableUtils.readVInt(in);
+      count = WritableUtils.readVInt(in);
+      System.out.print("("+OFFSET+", "+count+")");
       collection.seek(OFFSET);
       System.out.println(d.readLine());
     }
 
+    OFFSET=0;
     key.set("gold");
     reader.get(key, value);
-    System.out.println("Complete postings list for 'gold': " + value);
-
-    Int2IntFrequencyDistribution goldHist = new Int2IntFrequencyDistributionEntry();
     postings = value.getRightElement();
-    for (PairOfVInts pair : postings) {
-      goldHist.increment(pair.getRightElement());
+    buffer = new ByteArrayInputStream(postings.copyBytes());
+    in = new DataInputStream(buffer);
+    System.out.println("Complete postings list for 'gold': ("+value.getLeftElement()+", [");
+    while(in.available()!=0)
+    {
+        OFFSET = OFFSET + WritableUtils.readVInt(in);
+        count = WritableUtils.readVInt(in);
+        System.out.print("("+OFFSET+", "+count+")");
+        collection.seek(OFFSET);
+        System.out.println(d.readLine());
+        System.out.print(", ");
+    }
+    System.out.print("])\n");
+
+    Int2IntFrequencyDistribution goldHist = new Int2IntFrequencyDistributionEntry();    
+    buffer.reset();
+    
+    OFFSET=0;
+    while(in.available()!=0)
+    {
+        OFFSET = OFFSET + WritableUtils.readVInt(in);
+        count = WritableUtils.readVInt(in);
+        goldHist.increment(count);
     }
 
     System.out.println("histogram of tf values for gold");
     for (PairOfInts pair : goldHist) {
       System.out.println(pair.getLeftElement() + "\t" + pair.getRightElement());
     }
+    
+    buffer.close();
+    //Silver
 
     key.set("silver");
     reader.get(key, value);
-    System.out.println("Complete postings list for 'silver': " + value);
-
-    Int2IntFrequencyDistribution silverHist = new Int2IntFrequencyDistributionEntry();
     postings = value.getRightElement();
-    for (PairOfVInts pair : postings) {
-      silverHist.increment(pair.getRightElement());
+    buffer = new ByteArrayInputStream(postings.copyBytes());
+    in = new DataInputStream(buffer);
+    System.out.println("Complete postings list for 'silver': ("+value.getLeftElement()+", [");
+    while(in.available()!=0)
+    {
+        OFFSET = OFFSET + WritableUtils.readVInt(in);
+        count = WritableUtils.readVInt(in);
+        System.out.print("("+OFFSET+", "+count+")");
+        collection.seek(OFFSET);
+        System.out.println(d.readLine());
+        System.out.print(", ");
+    }
+    System.out.print("])\n");
+
+    Int2IntFrequencyDistribution silverHist = new Int2IntFrequencyDistributionEntry();    
+    buffer.reset();
+    
+    OFFSET=0;
+    while(in.available()!=0)
+    {
+        OFFSET = OFFSET + WritableUtils.readVInt(in);
+        count = WritableUtils.readVInt(in);
+        silverHist.increment(count);
     }
 
     System.out.println("histogram of tf values for silver");
-    for (PairOfInts pair : silverHist) {
+    for (PairOfInts pair : goldHist) {
       System.out.println(pair.getLeftElement() + "\t" + pair.getRightElement());
     }
+    
+    buffer.close();
 
     key.set("bronze");
     Writable w = reader.get(key, value);

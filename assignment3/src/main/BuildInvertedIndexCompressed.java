@@ -1,5 +1,7 @@
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Collections;
+//import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -16,11 +18,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.BytesWritable;
+//import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -32,11 +36,12 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import edu.umd.cloud9.io.pair.PairOfStrings;
+//import edu.umd.cloud9.io.pair.PairOfStrings;
 import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.io.pair.PairOfVInts;
 import edu.umd.cloud9.io.pair.PairOfStringInt;
-import edu.umd.cloud9.io.array.ArrayListWritable;
+//import edu.umd.cloud9.io.array.ArrayListWritable;
+import edu.umd.cloud9.util.pair.PairOfObjectInt;
 import cern.colt.Arrays;
 
 
@@ -110,13 +115,15 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
 
   // Reducer: sums up all the counts.
-  private static class MyReducer extends Reducer<PairOfStringInt, PairOfVInts, Text, PairOfWritables<VIntWritable,ArrayListWritable<PairOfVInts>>> {
+  private static class MyReducer extends Reducer<PairOfStringInt, PairOfVInts, Text, PairOfWritables<VIntWritable,BytesWritable>> {
 
     // Reuse objects.
     private final static VIntWritable SUM = new VIntWritable();
-    private final static ArrayListWritable<PairOfVInts> ARRAY = new ArrayListWritable<PairOfVInts>();
+    //private final static ArrayListWritable<PairOfVInts> ARRAY = new ArrayListWritable<PairOfVInts>();
     private final static Text RealKEY= new Text();
     private final static PairOfVInts TEMP=new PairOfVInts();
+    private final static ByteArrayOutputStream post = new ByteArrayOutputStream();
+    private final static DataOutputStream out =new DataOutputStream(post);
     private static int FileOffsetPre=0;
     private static int FileOffset=0;
     private static int sumcount = 0;
@@ -126,11 +133,12 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         throws IOException, InterruptedException {
 
       Iterator<PairOfVInts> iter = values.iterator();
-      if(!RealKEY.toString().equals(key.getLeftElement())&& status!=0)
+      if(!RealKEY.toString().equals(key.getLeftElement())&& status!=0)    //skip when first enter the method
       {
           SUM.set(sumcount);
-          context.write(RealKEY, new PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>>(SUM, ARRAY));
-    	  ARRAY.clear();
+          out.flush();
+          context.write(RealKEY, new PairOfWritables<VIntWritable, BytesWritable>(SUM, new BytesWritable(post.toByteArray())));
+    	  post.reset();
     	  sumcount = 0;
     	  FileOffsetPre=0;
       }
@@ -139,9 +147,11 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         sumcount ++;
         TEMP.set(iter.next().clone());
         FileOffset=TEMP.getLeftElement();
-        TEMP.set(FileOffset-FileOffsetPre,TEMP.getRightElement());
+        WritableUtils.writeVInt(out, FileOffset-FileOffsetPre);
+        WritableUtils.writeVInt(out, TEMP.getRightElement());
+        //TEMP.set(FileOffset-FileOffsetPre,TEMP.getRightElement());
         FileOffsetPre=FileOffset;
-        ARRAY.add(TEMP.clone());
+        //ARRAY.add(TEMP.clone());
       } 
  	  RealKEY.set(key.getLeftElement());
     }
@@ -151,9 +161,10 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     public void cleanup(Context context)
             throws IOException, InterruptedException {
         SUM.set(sumcount);
-        context.write(RealKEY, new PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>>(SUM, ARRAY));
-  	    ARRAY.clear();
-  	    sumcount = 0;  
+        out.flush();
+        context.write(RealKEY, new PairOfWritables<VIntWritable, BytesWritable>(SUM, new BytesWritable(post.toByteArray())));
+  	    post.close();  
+  	    out.close();
 
         }
     

@@ -19,6 +19,8 @@ package edu.umd.cloud9.example.ir;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.Stack;
@@ -37,7 +39,9 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.ToolRunner;
@@ -120,19 +124,25 @@ public class BooleanRetrievalCompressed extends Configured implements Tool{
 
   public Set<Integer> fetchDocumentSet(String term) throws IOException {
     Set<Integer> set = new TreeSet<Integer>();
+    byte[] buffer =  fetchPostings(term).copyBytes();
+    ByteArrayInputStream post = new ByteArrayInputStream(buffer);
+    DataInputStream in = new DataInputStream(post);    
     int RealDocNo=0;
-    for (PairOfVInts pair : fetchPostings(term)) {
-      set.add(pair.getLeftElement()+RealDocNo);
-      RealDocNo = RealDocNo + pair.getLeftElement();
+    while (in.available() !=0) {
+      RealDocNo = RealDocNo + WritableUtils.readVInt(in);
+      set.add(RealDocNo);
+      WritableUtils.readVInt(in);
     }
-
+    
+    post.close();
+    in.close();
     return set;
   }
 
-  public ArrayListWritable<PairOfVInts> fetchPostings(String term) throws IOException {
+  public BytesWritable fetchPostings(String term) throws IOException {
     Text key = new Text();
-    PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>> value =
-        new PairOfWritables<VIntWritable, ArrayListWritable<PairOfVInts>>();
+    PairOfWritables<VIntWritable, BytesWritable> value =
+        new PairOfWritables<VIntWritable, BytesWritable>();
 
     key.set(term);
     index.get(key, value);
