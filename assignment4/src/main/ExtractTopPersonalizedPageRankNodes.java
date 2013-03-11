@@ -19,6 +19,9 @@
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -52,6 +55,7 @@ import org.apache.log4j.Logger;
 import pagerank.PageRankNodeMultiSrc;
 import edu.umd.cloud9.io.map.HMapIFW;
 import edu.umd.cloud9.io.pair.PairOfIntFloat;
+
 
 public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
  // private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
@@ -127,15 +131,16 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       intermediateSRC1=PageRank.getLeftElement();
       if(intermediateSRC1!=intermediateSRC2)
       {
-          System.out.print("\n"+"Source: "+PageRank.getKey()+"\n");
+          SysOut.add("\n"+"Source: "+PageRank.getKey()+"\n");
     	  flag=0;
       }
       if(flag<top)
       {
     	  while(iter.hasNext())//&&flag<top)
       	  {
-    	      String str =String.format("%.5f %d", 1-PageRank.getRightElement(),iter.next().get());
-    		  System.out.print(str+"\n");
+    	      SysOut.add(String.format("%.5f %d", 1-PageRank.getRightElement(),iter.next().get()));
+    		  SysOut.add("\n");
+    	      //System.out.print(str+"\n");
     		  flag++;
       	  }
       }
@@ -159,9 +164,12 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
   public ExtractTopPersonalizedPageRankNodes() {
   }
 
+  //private static String SysOut=new String();
+  private static Queue<String> SysOut=new LinkedList<String>();
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String TOP = "top";
+  private static final String SRC = "sources";
 
   /**
    * Runs this tool.
@@ -176,6 +184,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("top n").create(TOP));
+    options.addOption(OptionBuilder.withArgName("src").hasArg()
+            .withDescription("source node").create(SRC));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -235,6 +245,11 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     FileSystem.get(conf).delete(new Path(outputPath), true);
 
     job.waitForCompletion(true);
+    
+    while(!SysOut.isEmpty())
+    {
+    	System.out.print(SysOut.poll());
+    }
 
     return 0;
   }
