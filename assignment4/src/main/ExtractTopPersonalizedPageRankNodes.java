@@ -16,12 +16,14 @@
 
 //import PairOfStringFloat;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
+
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -36,7 +38,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -55,6 +56,7 @@ import org.apache.log4j.Logger;
 import pagerank.PageRankNodeMultiSrc;
 import edu.umd.cloud9.io.map.HMapIFW;
 import edu.umd.cloud9.io.pair.PairOfIntFloat;
+
 
 
 public class ExtractTopPersonalizedPageRankNodes extends Configured implements Tool {
@@ -108,11 +110,12 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 	  }
 
   private static class MyReducer extends
-      Reducer<PairOfIntFloat, IntWritable, IntWritable, FloatWritable> {
+      Reducer<PairOfIntFloat, IntWritable, FloatWritable, IntWritable> {
     //private static TopNScoredObjects<Integer> queue;
 	  //private PairOfIntFloat KEY= new PairOfIntFloat();
 	  private int top;
-	  private static int counter=0;
+	  private final static FloatWritable KEY =new FloatWritable();
+	  private final static IntWritable VALUE =new IntWritable();
       //private static float intermediatePG1 = 0.0f; 
       //private static float intermediatePG2 = 0.0f;
       private static float intermediateSRC1 = 0.0f;
@@ -125,21 +128,28 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     @Override
     public void reduce(PairOfIntFloat PageRank, Iterable<IntWritable> iterable, Context context)
-        throws IOException {
+        throws IOException, InterruptedException {
       Iterator<IntWritable> iter = iterable.iterator();
       //queue.add(nid.get(), iter.next().get());
       intermediateSRC1=PageRank.getLeftElement();
       if(intermediateSRC1!=intermediateSRC2)
       {
-          SysOut.add("\n"+"Source: "+PageRank.getKey()+"\n");
-    	  flag=0;
+          //SysOut.add("\n"+"Source: "+PageRank.getKey()+"\n");
+    	  KEY.set(0);
+    	  VALUE.set(PageRank.getKey());
+    	  context.write(KEY,VALUE);
+          flag=0;
       }
       if(flag<top)
       {
     	  while(iter.hasNext())//&&flag<top)
       	  {
-    	      SysOut.add(String.format("%.5f %d", 1-PageRank.getRightElement(),iter.next().get()));
-    		  SysOut.add("\n");
+    		  int nodeid =iter.next().get();
+    	      //SysOut.add(String.format("%.5f %d", 1-PageRank.getRightElement(),nodeid));
+    		  //SysOut.add("\n");
+        	  KEY.set(1-PageRank.getRightElement());
+        	  VALUE.set(nodeid);
+        	  context.write(KEY,VALUE);
     	      //System.out.print(str+"\n");
     		  flag++;
       	  }
@@ -148,24 +158,24 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
      
     }
 
-    @Override
+    /*@Override
     public void cleanup(Context context) throws IOException, InterruptedException {
       IntWritable key = new IntWritable();
       FloatWritable value = new FloatWritable();
 
-     /* for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
+      for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
         key.set(pair.getLeftElement());
         value.set(pair.getRightElement());
         context.write(key, value);
-      }*/
-    }
+      }
+    }*/
   }
 
   public ExtractTopPersonalizedPageRankNodes() {
   }
 
   //private static String SysOut=new String();
-  private static Queue<String> SysOut=new LinkedList<String>();
+  //private static Queue<String> SysOut=new LinkedList<String>();
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String TOP = "top";
@@ -234,8 +244,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     job.setMapOutputKeyClass(PairOfIntFloat.class);
     job.setMapOutputValueClass(IntWritable.class);
 
-    job.setOutputKeyClass(IntWritable.class);
-    job.setOutputValueClass(FloatWritable.class);
+    job.setOutputKeyClass(FloatWritable.class);
+    job.setOutputValueClass(IntWritable.class);
 
     job.setMapperClass(MyMapper.class);
     job.setPartitionerClass(MyPartitioner.class);
@@ -246,10 +256,31 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     job.waitForCompletion(true);
     
-    while(!SysOut.isEmpty())
+    InputStream fis=new FileInputStream(outputPath+"/part-r-00000");
+    BufferedReader br=new BufferedReader(new InputStreamReader(fis));
+    String s;
+    float    key;
+    int		value;
+    while((s=br.readLine())!=null)
     {
-    	System.out.print(SysOut.poll());
+    	String[] sources=s.split("\\s+");
+    	key=Float.parseFloat(sources[0]);
+    	value=Integer.parseInt(sources[1]);
+    	if(key==0.0f)
+    	{
+    		System.out.print("\n"+"Source: "+value+"\n");
+    	}
+    	else{
+    		System.out.print(String.format("%.5f %d", key,value)+"\n");
+    	}
     }
+    
+    
+    
+    //while(!SysOut.isEmpty())
+    //{
+    //	System.out.print(SysOut.poll());
+    //}
 
     return 0;
   }
