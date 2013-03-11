@@ -34,10 +34,12 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -256,11 +258,18 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
     job.waitForCompletion(true);
     
-    InputStream fis=new FileInputStream(outputPath+"/part-r-00000");
-    BufferedReader br=new BufferedReader(new InputStreamReader(fis));
+    
+
+    FileSystem fileSystem = FileSystem.get(conf);
+    Path path = new Path(outputPath+ "/part-r-00000");;
+    //MapFile.Reader reader = new MapFile.Reader(new Path(outputPath+ "/part-r-00000"),conf);
+    
+    
+   // InputStream fis=new FileInputStream(outputPath+"/part-r-00000");
+    BufferedReader br=new BufferedReader(new InputStreamReader(fileSystem.open(path)));
     String s;
-    float    key;
-    int		value;
+    float   key;//=new FloatWritable();
+    int	value;//=new IntWritable();
     while((s=br.readLine())!=null)
     {
     	String[] sources=s.split("\\s+");
@@ -274,6 +283,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     		System.out.print(String.format("%.5f %d", key,value)+"\n");
     	}
     }
+    //reader.close();
+    br.close();
     
     
     
