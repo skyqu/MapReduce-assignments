@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>Boolean Retrieval Exercise</h2>
+</div>
+
+<table style="margin-top: 15px; margin-bottom:
+15px"><tr><td valign="top"><span class="label
+label-warning">Warning</span></td>
+<td style="padding-left: 10px">This exercise builds on the
+the <a href="./indexing.html">inverted indexing exercise</a>, which
+must be completed before this.</td></tr></table>
+
+<p>Write a Boolean retrieval engine that uses the index created in the
+<a href="indexing.html">inverted indexing</a> exercise.  Your
+retrieval engine should be able to handle complex Boolean queries of
+the following form:</p>
+
+<pre class="code">
+( slings AND arrows ) OR ( mortal AND coil )
+( et AND tu AND brute )
+</pre>
+
+<p>As a note, the inverted index you constructed in the previous
+exercise is specifically designed for ranked retrieval.  For Boolean
+retrieval, the
+<i>df</i> and <i>tf</i> of terms are not used.</p>
+
+<p>Your system will need to parse nested Boolean queries.  To make
+query processing simpler, you can choose the notation in which the
+queries are expressed: <a
+href="http://en.wikipedia.org/wiki/Infix_notation">infix notation</a>
+(as above) or <a
+href="http://en.wikipedia.org/wiki/Polish_notation">prefix
+notation</a>, e.g., "(AND slings arrows)".  In fact, you can even
+write a query parser that uses <a
+href="http://en.wikipedia.org/wiki/Reverse_Polish_notation">reverse
+polish notation</a>&mdash;it has many advantages, one of which is that
+all expressions can be unambiguously interpreted without parentheses.
+As a hint, reverse polish notation actually yields the simplest
+implementation.</p>
+
+<p>As with previous exercises, use the sample input included in
+Cloud<sup>9</sup>, <a
+href="../../data/bible+shakes.nopunc.gz">the Bible and the complete
+works of Shakespeare</a>.  As a bare minimum, your Boolean retrieval
+engine must be able to:</p>
+
+<ul>
+
+  <li>Process arbitrarily complex, nested queries, implementing both
+  the "AND" and "OR" operators.</li>
+
+  <li>Return the docno and full text of the lines from the sample
+  collection that matches the query.</li>
+
+</ul>
+
+<p>For example, in response to the query "outrageous AND fortune",
+your retrieval engine should return something like:</p>
+
+<pre class="code">
+4442172  the slings and arrows of outrageous fortune
+</pre>
+
+<p>To give another example, in response to the query "white AND rose",
+your retrieval engine should return something like:</p>
+
+<pre class="code">
+7841087  from off this brier pluck a white rose with me
+7841354  i pluck this white rose with plantagenet
+7841879  giving my verdict on the white rose side
+7841972  lest bleeding you do paint the white rose red
+7842315  in sign whereof i pluck a white rose too
+7842458  shall dye your white rose in a bloody red
+7845524  shall send between the red rose and the white
+8237199  until the white rose that i wear be dyed
+8275306  the red rose and the white are on his face
+9067070  we will unite the white rose and the red
+</pre>
+
+<p>Once you have the Boolean search engine working, try out these
+sample queries:</p>
+
+<pre class="code">
+means AND deceit
+(white OR red ) AND rose AND pluck
+(unhappy OR outrageous OR (good AND your)) AND fortune
+</pre>
+
+<h3>Practical Tips</h3>
+
+<p>This exercise is meant to be completed outside of Hadoop. Build
+your inverted index in Hadoop, as per
+the <a href="indexing.html">inverted indexing</a> exercise. If you set
+the number of reducers to one, all the postings will be written to a
+single file. This will make the index easier to manipulate.
+Obviously, this isn't a scalable solution, but it will suffice for
+this exercise. Retrieve your index from HDFS with the <code>hadoop fs
+-get</code> command. Implement your Boolean retrieval engine to
+manipulate the inverted index stored on your local machine.</p>
+
+<p>As another hint, <code>MapFileOutputFormat</code> might come in
+handy.</p>
+
+<h3>Extensions</h3>
+
+<p>Some optional features you might want to consider implementing
+are:</p>
+
+<ul>
+
+  <li>Support for the Boolean "NOT" operator.  Or try the "AND-NOT"
+  operator, which is a bit easier.  The query "(a AND-NOT b)"
+  retrieves documents that contain a, but not b.</li>
+
+  <li>Ordering of retrieved documents based on the number of matching
+  terms (or something similarly sensical).  For example, given the
+  query "(a AND b)", lines that have four occurrences of the query
+  terms should be place ahead of lines that have three occurrences of
+  the query terms.</li>
+
+</ul>
+
+<h3>Solutions</h3>
+
+<p>When you're ready, the solutions to this
+exercise are located <a href="retrieval-solutions.html">here</a>.</p>
+
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>

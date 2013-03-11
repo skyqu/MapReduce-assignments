@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>Inverted Indexing Exercise: Solutions</h2>
+</div>
+
+<p>This page presents solutions for
+the <a href="indexing.html">inverted indexing exercise</a>.</p>
+
+<p>Let's start by putting the collection into HDFS:</p>
+
+<pre class="code">
+hadoop fs -put data/bible+shakes.nopunc
+</pre>
+
+<p>Note that we've uncompressed the collection first. The reason for
+this is that in order to fetch a random document, we need to seek to
+arbitrary positions in the file, which is not possible with gzip. (In
+case you're wondering, with block compression schemes such as lzo this
+is possible, but requires creating a block-level index ahead of
+time. This is beyond the scope of this exercise.)</p>
+
+<p>The main
+class for building the inverted index is
+<code>edu.umd.cloud9.example.ir.BuildInvertedIndex</code> and a sample
+command-line invocation is as follows:</p>
+
+<pre class="code">
+etc/hadoop-cluster.sh edu.umd.cloud9.example.ir.BuildInvertedIndex -input bible+shakes.nopunc -output index -numReducers 1
+</pre>
+
+<p>Command-line invocation for a simple program that performs the
+analysis asked in the questions:</p>
+
+<pre class="code">
+etc/hadoop-cluster.sh edu.umd.cloud9.example.ir.LookupPostings -index index -collection bible+shakes.nopunc
+</pre>
+
+<p>Although <code>LookupPostings</code> is not a MapReduce program, we
+use <code>etc/hadoop-cluster.sh</code> as the launcher script so that
+HDFS configurations are properly set up. In this case, we read
+data <i>directly</i> from HDFS.</p>
+
+<p>Alternatively, you can copy the index data out of HDFS onto local
+drive, and use the <code>etc/run.sh</code> launch script:</p>
+
+<pre class="code">
+etc/run.sh edu.umd.cloud9.example.ir.LookupPostings -index index -collection bible+shakes.nopunc
+</pre>
+
+<p>Now, onto the answers. Posting corresponding to the term "starcross'd":</p>
+
+<pre class="code">
+(5047738, 1)
+a pair of starcross'd lovers take their life
+</pre>
+
+<p>Histogram of <i>tf</i> values for "gold":</p>
+
+<pre class="code">
+1       523
+2       58
+3       3
+</pre>
+
+<p>Histogram of <i>tf</i> values for "silver":</p>
+
+<pre class="code">
+1       314
+2       39
+3       1
+</pre>
+
+<p>The term "bronze" does not appear in the collection.</p>
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>

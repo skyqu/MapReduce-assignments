@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>Boolean Retrieval Exercise: Solutions</h2>
+</div>
+
+<p>This page presents solutions for
+the <a href="retrieval.html">Boolean retrieval exercise</a>.  The main
+class for performing retrieval is
+<code>edu.umd.cloud9.example.ir.BooleanRetrieval</code>. Assuming the
+inverted index has already been constructed and resides on HDFS, the
+command-line invocation is as follows:</p>
+
+<pre class="code">
+etc/hadoop-cluster.sh edu.umd.cloud9.example.ir.BooleanRetrieval -index index -collection bible+shakes.nopunc
+</pre>
+
+<p>In this case, we're reading indexes directly from
+HDFS. Alternative, you can copy the indexes local and use
+the <code>etc/run.sh</code> launch script:</p>
+
+<pre class="code">
+etc/run.sh edu.umd.cloud9.example.ir.BooleanRetrieval -index index -collection bible+shakes.nopunc
+</pre>
+
+<p>Here are the results for the test queries:</p>
+
+<p><b>Query:</b> means AND deceit<br/>
+Reverse Polish Notation: means deceit AND</p>
+
+<pre class="code">
+6870153	 who makes the fairest show means most deceit
+8135048	 who cannot steal a shape that means deceit
+</pre>
+
+<p><b>Query:</b> (white OR red ) AND rose AND pluck<br/>
+Reverse Polish Notation: white red OR rose AND pluck AND</p>
+
+<pre class="code">
+7841087	 from off this brier pluck a white rose with me
+7841229	 pluck a red rose from off this thorn with me
+7841354	 i pluck this white rose with plantagenet
+7841396	 suffolk i pluck this red rose with young somerset
+7842315	 in sign whereof i pluck a white rose too
+</pre>
+
+<p><b>Query:</b> (unhappy OR outrageous OR (good AND your)) AND fortune<br/>
+Reverse Polish Notation: unhappy outrageous OR good your AND OR fortune AND</p>
+
+<pre class="code">
+4442172	 the slings and arrows of outrageous fortune
+5167827	 friar laurence unhappy fortune by my brotherhood
+7110114	 tender your own good fortune
+</pre>
+
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>

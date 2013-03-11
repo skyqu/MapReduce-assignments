@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>Bigram Counts Exercise</h2>
+</div>
+
+<table style="margin-top: 15px; margin-bottom:
+15px"><tr><td valign="top"><span class="label
+label-warning">Warning</span></td>
+<td style="padding-left: 10px">It is strongly recommended that you
+first complete the <a href="../word-count.html">word count
+tutorial</a> before trying this exercise.</td></tr></table>
+
+<p>This exercise is a simple extension of the word count demo: in the
+first part of the exercise, you'll be counting bigrams, and in the
+second part of the exercise, you'll be computing bigram relative
+frequencies. For both parts, feel free to use Hadoop data types in
+Cloud<sup>9</sup> if you think it's helpful. You'll
+want to look in the <code>edu.umd.cloud9.io</code> package.</p>
+
+<h3>Part I: Count the bigrams</h3>
+
+<p>Take the word count example
+<code>edu.umd.cloud9.example.simple.DemoWordCount</code> and extend it to count
+bigrams.  <a href="http://en.wikipedia.org/wiki/Bigram">Bigrams</a>
+are simply sequences of two consecutive words.  For example, the
+previous sentence contains the following bigrams: "Bigrams are", "are
+simply", "simply sequences", "sequence of", etc.</p>
+
+<p>Work with the sample collection included in
+Cloud<sup>9</sup>, <a href="../../data/bible+shakes.nopunc.gz">the
+Bible and the complete works of Shakespeare</a>.  Don't worry about
+doing anything fancy in terms of tokenization; it's fine to continue
+using Java's <code>StringTokenizer</code>.</p>
+
+<p>Questions to answer:</p>
+
+<ol>
+
+  <li>How many unique bigrams are there?</li>
+
+  <li>List the top ten most frequent bigrams and their counts.</li>
+
+  <li>What fraction of all bigrams occurrences does the top ten
+  bigrams account for?  That is, what is the cumulative frequency of
+  the top ten bigrams?</li>
+
+  <li>How many bigrams appear only once?</li>
+
+</ol>
+
+<h3>Part II: From bigram counts to relative frequencies</h3>
+
+<p>Extend your program to compute bigram relative frequencies, i.e.,
+how likely you are to observe a word given the preceding word.  The
+output of the code should be a table of values for
+F(W<sub><small>n</small></sub>|W<sub><small>n-1</small></sub>).</p>
+
+<p>Hint: to compute F(B|A), count up the number of occurrences of the
+bigram "A B", and then divide by the number of occurrences of all the
+bigrams that start with "A".</p>
+
+<p>Questions to answer:</p>
+
+<ol>
+
+  <li>What are the five most frequent words following the word
+  "light"?  What is the frequency of observing each word?</li>
+
+  <li>Same question, except for the word "contain".</li>
+
+  <li>If there are a total of <i>N</i> words in your vocabulary, then
+  there are a total of <i>N<sup><small>2</small></sup></i> possible
+  values for
+  F(W<sub><small>n</small></sub>|W<sub><small>n-1</small></sub>)&mdash;in
+  theory, every word can follow every other word (including itself).
+  What fraction of these values are non-zero?  In other words, what
+  proportion of all possible events are actually observed?  To give a
+  concrete example, let's say that following the word "happy", you
+  only observe 100 different words in the text collection.  This means
+  that <i>N</i>-100 words are never seen after "happy" (perhaps the
+  distribution of happiness is quite limited?).</li>
+
+</ol>
+
+<h3>Solutions</h3>
+
+<p>When you're ready, the solutions to this exercise are
+located <a href="bigrams-solutions.html">here</a>.</p>
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>

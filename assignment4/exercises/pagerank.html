@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>PageRank Exercise</h2>
+</div>
+
+<table style="margin-top: 15px; margin-bottom:
+15px"><tr><td valign="top"><span class="label
+label-warning">Warning</span></td>
+<td style="padding-left: 10px">It is strongly recommended that you
+first complete the <a href="../word-count.html">word count
+tutorial</a> before trying this exercise.</td></tr></table>
+
+<p>In this exercise, you are going to implement PageRank in
+MapReduce. Here are three separate graphs to work with:</p>
+
+<ul>
+
+  <li><a href="./sample-small.txt">a "small" one</a> (93 nodes, 195 edges)</li>
+
+  <li><a href="./sample-medium.txt">a "medium" one</a> (316 nodes, 430 edges)</li>
+
+  <li><a href="./sample-large.txt">a "large" one</a> (1458 nodes, 3545 edges)</li>
+
+</ul>
+ 
+<p>Of course, these are just toy datasets, since 1458 nodes wouldn't
+qualify as "large" by any stretch of the imagination...</p>
+
+<p>The files are tab-delimited adjacency list representations of the
+graphs.  The first token on each line represents the unique id of the
+source node, and the rest of the tokens represent the target nodes
+(i.e., outlinks from the source node).  If a node does not have any
+outlinks, its corresponding line will contain only one token (the
+source node id).</p>
+
+<p>To make your lives easier, I've created a small demo program that
+computes PageRank using
+the <a href="http://jung.sourceforge.net/">JUNG</a> package (2.0.1).
+The relevant class
+is <code>edu.umd.cloud9.example.pagerank.SequentialPageRank</code>, which takes
+two command-line arguments: the first is a file containing the graph
+(one of the ones above), and the second is the random jump factor (a
+typical setting is 0.15).</p>
+
+<p>You can launch the program from a shell.  Go to the base project
+directory and type <code>ant</code> to build the necessary jar.  You
+should then be able to run the following command (which uses an
+automatically-generated launch script that properly constructs the
+correct classpath):</p>
+
+<pre class="code">etc/run.sh edu.umd.cloud9.example.pagerank.SequentialPageRank -input docs/exercises/sample-small.txt -jump 0.15</pre>
+
+<p>And here's the sample output:</p>
+
+<pre class="code">
+Number of components: 1
+Number of edges: 195
+Number of nodes: 93
+Random jump factor: 0.15
+
+PageRank of nodes, in descending order:
+0.04821884416235794	8709207
+0.03471312258467498	11287582
+0.03438927990335218	9650960
+0.033945207898198146	12610128
+0.032378178767292154	8553535
+...
+</pre>
+
+<p>To help in your implementation, I've captured the complete output
+of <code>edu.umd.cloud9.example.pagerank.SequentialPageRank</code> for each of the
+above graphs:</p>
+
+<ul>
+
+  <li><a href="./sample-small.pagerank.txt">PageRank values for the
+  small graph</a></li>
+
+  <li><a href="./sample-medium.pagerank.txt">PageRank values for the
+  medium graph</a></li>
+
+  <li><a href="./sample-large.pagerank.txt">PageRank values for the
+  large graph</a></li>
+
+</ul>
+
+<h3>Hints</h3>
+
+<p>If you're stuck, you might want to take a look at the source code
+of the <a href="http://jung.sourceforge.net/">JUNG</a>
+implementation.</p>
+
+<p>In the networks above, there are a relatively large number of
+dangling nodes, i.e., nodes with no outlinks.  This frequently happens
+in the Web context also; for example, pages the crawler hasn't
+downloaded yet would appear as "dangling".  For these nodes, you'll
+need to figure out how to "spread" its PageRank score to the other
+nodes.</p>
+
+<p>Here's the a good order in which to tackle the various issues:</p>
+
+<ol>
+
+  <li>Build an implementation that does not handle the random jump
+  factor and does not handling dangling nodes.</li>
+
+  <li>Add in support for dangling nodes.</li>
+
+  <li>Add in support for the random jump factor.</li>
+
+</ol>
+
+<h3>Postscript</h3>
+
+<p>If you're curious: the nodes in these graphs represent MEDLINE
+records (abstracts in the life sciences domain).  The links represent
+content-similarity links, i.e., pairs of abstracts that are similar in
+the words they contain.  For example, consider pmid (unique identifier
+in the MEDLINE collection)
+<a href="http://www.ncbi.nlm.nih.gov/pubmed/8709207">8709207</a>.  See
+the "Related Links" panel on the right hand side of the browser?  The
+data provided above represent instances of graphs defined by such
+links.</p>
+
+<h3>Solutions</h3>
+
+<p>When you're ready, the solutions to this exercise are
+located <a href="pagerank-solutions.html">here</a>.</p>
+
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>

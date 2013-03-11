@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Cloud9: A Hadoop toolkit for working with big data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="../assets/css/bootstrap.css" rel="stylesheet">
+    <link href="../assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="../assets/css/docs.css" rel="stylesheet">
+    <link href="../assets/js/google-code-prettify/prettify.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body data-spy="scroll" data-target=".bs-docs-sidebar">
+
+    <!-- Navbar
+    ================================================== -->
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="">
+                <a href="../../index.html">Home</a>
+              </li>
+              <li class="">
+                <a href="../contents.html">Table of Contents</a>
+              </li>
+              <li class="">
+                <a href="../api/index.html">API</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Subhead
+================================================== -->
+<header class="jumbotron subhead" id="overview">
+  <div class="container">
+    <h1>Cloud<sup>9</sup></h1>
+    <p class="lead">A Hadoop toolkit for working with big data</p>
+  </div>
+</header>
+
+  <div class="container">
+
+<div class="page-header">
+<h2>Inverted Indexing Exercise</h2>
+</div>
+
+<table style="margin-top: 15px; margin-bottom:
+15px"><tr><td valign="top"><span class="label
+label-warning">Warning</span></td>
+<td style="padding-left: 10px">It is strongly recommended that you
+first complete the <a href="../word-count.html">word count
+tutorial</a> before trying this exercise.</td></tr></table>
+
+<p>In this exercise, you'll be creating an <i>inverted index</i>.  An
+inverted index is a data structure common to nearly all information
+retrieval systems.  Let us consider the following famous lines from
+Shakespeare's <i>Merchants of Venice</i>:</p>
+
+<pre class="code">
+1: if you prick us do we not bleed
+2: if you tickle us do we not laugh 
+3: if you poison us do we not die and 
+4: if you wrong us shall we not revenge
+</pre>
+
+<p>An inverted index consists of a collection of postings lists, one
+associated with each unique term in the collection.  Each postings
+list consists of a number of individual postings.  Each posting holds
+a document identifier (docno) and the frequency (i.e., count) of the
+term in that document.</p>
+
+<p>Let's treat each line in the above sample data as if it were a
+"document".  The complete inverted index would look something like
+this:</p>
+
+<pre class="code">
+and     : 1 : (3, 1)
+bleed   : 1 : (1, 1)
+die     : 1 : (3, 1)
+do      : 3 : (1, 1), (2, 1), (3, 1)
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+laugh   : 1 : (2, 1)
+not     : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+poison  : 1 : (3, 1)
+prick   : 1 : (1, 1)
+revenge : 1 : (4, 1)
+shall   : 1 : (4, 1)
+tickle  : 1 : (2, 1)
+us      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+we      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+wrong   : 1 : (4, 1)
+you     : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+</pre>
+
+<p>As you can see, we have a postings list for each word that appears
+in the collection.  Let us look at the postings list corresponding to
+the term <i>if</i> in a bit more detail:</p>
+
+<pre class="code">
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+</pre>
+
+<p>The number directly after the term is its <i>document frequency</i>
+or <i>df</i> for short.  The <i>df</i> specifies the number of
+documents that contain this term.  Since <i>if</i> appears in all four
+documents, its <i>df</i> is 4.  Although the <i>df</i> can be easily
+reconstructed by counting the number of postings, it is often
+explicitly stored in the inverted index.  The postings list contains a
+number of postings, each of which is a (<i>docno</i>, <i>tf</i>)
+tuple.  The <i>docno</i> is simply a unique identifier for the
+document (one through four, in this case).  The <i>tf</i>, which
+stands for <i>term frequency</i>, is the number of times the term
+appears in the document.  The term
+<i>if</i> appears once in every document.  Typically, postings are
+sorted by ascending docno (as shown above). </p>
+
+<h3>Your Task</h3>
+
+<p>Write a MapReduce program that builds an inverted
+index (as described above).  Each postings list should explicitly
+store the <i>df</i>, as well as all the individual postings.  Postings
+should be sorted by ascending docno (postings corresponding to smaller
+docnos should precede postings corresponding to larger docnos).  Note
+that the description above only specifies the logical structure of the
+inverted index&mdash;you are free in your choice of data structures
+for the actual implementation (e.g., each posting does not literally
+need to be a tuple denoted by parentheses).</p>
+
+<p>Run the inverted indexer on the sample input included in
+Cloud<sup>9</sup>, <a
+href="../../data/bible+shakes.nopunc.gz">the Bible and the complete
+works of Shakespeare</a>.  As with the above case, treat each line as
+if it were an individual "document".  When you map over a plain text
+file using <code>TextInputFormat</code> in Hadoop, the key passed to the mapper
+contains the byte offset of the line from the beginning of the file,
+while the value contains the text of the line.  Use this offset value
+as the unique docno.  As part of this exercise you'll also need to
+write a utility (outside MapReduce) that takes a given docno (i.e.,
+the byte offset) and returns the associated line.</p>
+
+<p>Questions to answer:</p>
+
+<ol>
+
+  <li>Look up the postings corresponding to the term "starcross'd".
+  There should only be one line in the entire collection that contains
+  the term.  What is that line?  What's its docno (i.e., byte
+  offset)?</li>
+
+  <li>Look up the postings corresponding to the term "gold".  Generate
+  a histogram of <i>tf</i> values.  That is, in how many lines does
+  "gold" appear once, twice, three times, etc.?</li>
+
+  <li>Do the same for the terms "silver" and "bronze".</li>
+
+</ol>
+
+<h3>Practical Tips</h3>
+
+<p>In this exercise, you'll have to create and manipulate postings
+lists, which are complex objects that have their own internal
+structure.  Let's consider this term and its associated postings list
+as an example:</p>
+
+<pre class="code">
+if      : 4 : (1, 1), (2, 1), (3, 1), (4, 1)
+</pre>
+
+<p>You have three choices to represent postings lists.  First, you can
+encode them as Java strings wrapped inside Hadoop <code>Text</code> objects.  The
+string format might look something like this:</p>
+
+<pre class="code">
+4:1,1:2,1:3,1:4,1
+</pre>
+
+<p>The downside is that when manipulating postings, you'll have to do
+a lot of string-based operations (e.g., splits).  This approach will
+work, but it's pretty ugly. The second approach is to write your own
+custom <code>Writable</code>. The third is to
+reuse <code>Writable</code>s that are in Cloud<sup>9</sup>. You'll
+want to look in the
+<code>edu.umd.cloud9.io</code> package if you decide to go this
+route.</p>
+
+<p>If you decide to adopt the second or third option, this exercise is
+a good opportunity to learn about different output formats.  An
+<code>OutputFormat</code> (see Hadoop API) describes how output
+key-value pairs are written to HDFS. By default, Hadoop
+uses <code>TextOutputFormat</code>, which writes out the key-value
+pairs in human-readable text format. This is good for you, but can be
+annoying if you want to further manipulate the output
+programmatically&mdash;since you'll have the read in the text file and
+parse the key-value pairs back into Java objects (even if you have
+your own custom <code>Writable</code>s).</p>
+
+<p>As an alternative, you might want to
+consider <code>SequenceFileOutputFormat</code>. You can specify that
+format with the <code>setOutputFormatClass</code> method
+in <code>Job</code> class. If you do this, the output of your
+MapReduce job will be stored in one or
+more <code>SequenceFile</code>s. The advantage
+of <code>SequenceFile</code>s is that they store key-value pairs in a
+machine-readable format, i.e., as serialized byte representations of
+the Java objects (not human readable, but can be programmatically
+manipulated quite easily). The
+<code>SequenceFile</code> API provides methods for reading key-value
+pairs&mdash;saving you the effort of having to manually parse plain
+text files. Of course, <code>SequenceFile</code>s aren't very useful
+if you are using <code>Text</code> objects as output values.</p>
+
+<p>Along the same lines, you might also want to take a look at
+<code>MapFileOutputFormat</code>, which writes the output key-value
+pairs to... as you've guessed, <code>MapFile</code>s! These files have
+the additional advantage of supporting random access to the keys.  You
+should learn to use
+<code>SequenceFile</code>s, but <code>MapFile</code>s are likely more useful for this
+exercise. Once again, see the API for details.</p>
+
+<h3>Solutions</h3>
+
+<p>When you're ready, the solutions to this exercise are
+located <a href="indexing-solutions.html">here</a>.</p>
+
+
+  </div>
+
+
+
+    <!-- Footer
+    ================================================== -->
+    <footer class="footer">
+      <div class="container">
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>Designed using <a href="http://twitter.github.com/bootstrap/">Bootstrap</a>.</p>
+        <p>Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License v2.0</a>, documentation under <a href="http://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.</p>
+      </div>
+    </footer>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="../assets/js/jquery.js"></script>
+    <script src="../assets/js/google-code-prettify/prettify.js"></script>
+    <script src="../assets/js/bootstrap-transition.js"></script>
+    <script src="../assets/js/bootstrap-alert.js"></script>
+    <script src="../assets/js/bootstrap-modal.js"></script>
+    <script src="../assets/js/bootstrap-dropdown.js"></script>
+    <script src="../assets/js/bootstrap-scrollspy.js"></script>
+    <script src="../assets/js/bootstrap-tab.js"></script>
+    <script src="../assets/js/bootstrap-tooltip.js"></script>
+    <script src="../assets/js/bootstrap-popover.js"></script>
+    <script src="../assets/js/bootstrap-button.js"></script>
+    <script src="../assets/js/bootstrap-collapse.js"></script>
+    <script src="../assets/js/bootstrap-carousel.js"></script>
+    <script src="../assets/js/bootstrap-typeahead.js"></script>
+    <script src="../assets/js/bootstrap-affix.js"></script>
+
+  </body>
+</html>
