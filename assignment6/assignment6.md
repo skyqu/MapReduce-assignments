@@ -1,4 +1,4 @@
-'''
+```
 A = LOAD '/user/shared/tweets2011/tweets2011.txt' AS (id:chararray, date:chararray, name:chararray, comment:chararray);
 B = FOREACH A GENERATE SUBSTRING(date,4,13) AS time0, comment AS comment;
 C = FOREACH B GENERATE REPLACE(time0,'Jan ','1/') AS time1;
@@ -20,6 +20,6 @@ F = FOREACH E GENERATE group as term, COUNT(D) as count;
 T = FILTER F BY ((SUBSTRING(term,0,2) == '1/') AND (SUBSTRING(term,2,4) >= '23')) OR ((SUBSTRING(term,0,2) == '2/') AND (SUBSTRING(term,2,4) <= '08'));
 dump T;
 
-'''
+```
 
 
