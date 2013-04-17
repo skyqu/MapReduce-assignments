@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
-public class ExtractHourlyCountsEgypt extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(ExtractHourlyCountsEgypt.class);
+public class ExtractHourlyCountsAll extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(ExtractHourlyCountsAll.class);
 
   // Mapper: emits (token, 1) for every word occurrence.
   private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
@@ -42,8 +42,7 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
         throws IOException, InterruptedException {
     	String line = ((Text) value).toString();
     	String[] terms =line.split("\\t+");
-    	int flag=0;
-    	if(terms.length>=4)
+    	if(terms.length>1)
     	{	
     		//System.out.print(terms[2]+"\n");
     		String[] date = terms[1].split("\\s+");
@@ -54,37 +53,19 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
     			System.out.print(date[2]+"\n");
     			if(Integer.parseInt(date[2])>=23)
     			{
-    				String[] tweet=terms[3].split("\\s+");
-    				for(int i=0;i<tweet.length;i++)
-    				{
-    					if(tweet[i].matches(".*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*"))
-    					{
-    	    				System.out.print(date[3]+"\n");
-    	    				String time="1/"+date[2]+" "+date[3].substring(0, 2);
-    	    				WORD.set(time);
-    	    				context.write(WORD, ONE);
-    						break;
-    					}
-    				}
-	
+    				System.out.print(date[3]+"\n");
+    				String time="1/"+date[2]+" "+date[3].substring(0, 2);
+    				WORD.set(time);
+    				context.write(WORD, ONE);	
     			}
     		}
     		else if(date[1].equals("Feb"))
     		{
     			if(Integer.parseInt(date[2])<=8)
     			{
-    				String[] tweet=terms[3].split("\\s+");
-    				for(int i=0;i<tweet.length;i++)
-    				{
-    					if(tweet[i].matches(".*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*"))
-    					{
-    	    				System.out.print(date[3]+"\n");
-    	    				String time="2/"+date[2]+" "+date[3].substring(0, 2);
-    	    				WORD.set(time);
-    	    				context.write(WORD, ONE);
-    						break;
-    					}
-    				}
+    				String time="2/"+date[2]+" "+date[3].substring(0, 2);
+    				WORD.set(time);
+    				context.write(WORD, ONE);
     			}
     		}
     	}
@@ -118,7 +99,7 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
   /**
    * Creates an instance of this tool.
    */
-  public ExtractHourlyCountsEgypt() {}
+  public ExtractHourlyCountsAll() {}
 
   //private static final String INPUT = "input";
   //private static final String OUTPUT = "output";
@@ -131,7 +112,7 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     Options options = new Options();
 
-   // options.addOption(OptionBuilder.withArgName("path").hasArg()
+    //options.addOption(OptionBuilder.withArgName("path").hasArg()
     //    .withDescription("input path").create(INPUT));
     //options.addOption(OptionBuilder.withArgName("path").hasArg()
     //    .withDescription("output path").create(OUTPUT));
@@ -148,7 +129,7 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
       return -1;
     }
 
-    /*if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
+   /* if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
       formatter.setWidth(120);
@@ -158,19 +139,19 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
     }*/
 
     String inputPath = "/user/shared/tweets2011/tweets2011.txt";  //cmdline.getOptionValue(INPUT);
-    String outputPath = "skyqu-egypt/";  // cmdline.getOptionValue(OUTPUT);
+    String outputPath = "skyqu-all/";  // cmdline.getOptionValue(OUTPUT);
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    LOG.info("Tool: " + ExtractHourlyCountsEgypt.class.getSimpleName());
+    LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(ExtractHourlyCountsEgypt.class.getSimpleName());
-    job.setJarByClass(ExtractHourlyCountsEgypt.class);
+    job.setJobName(ExtractHourlyCountsAll.class.getSimpleName());
+    job.setJarByClass(ExtractHourlyCountsAll.class);
 
     job.setNumReduceTasks(reduceTasks);
 
@@ -199,6 +180,6 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new ExtractHourlyCountsEgypt(), args);
+    ToolRunner.run(new ExtractHourlyCountsAll(), args);
   }
 }
