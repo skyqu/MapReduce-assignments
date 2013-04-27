@@ -1,0 +1,4 @@
+A = LOAD 'reviewsNew.txt' AS (uid:chararray, pid:chararray, date:chararray, nhf:int, nf:int, rate:int, title:chararray, comment:chararray);
+B = FOREACH A GENERATE uid AS uid, pid AS pid, rate AS rate;
+
+store B into 'ratingspamming';
