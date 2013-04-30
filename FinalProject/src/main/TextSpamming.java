@@ -56,10 +56,9 @@ public class TextSpamming extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-      String[] terms =line.split(",");
-      String UID = terms[0].substring(1);
-      String PID = terms[1];
-      String comment = terms[2].substring(0,terms[2].length()-1);
+      String UID = line.substring(0, 14);
+      String PID = line.substring(15, 24);
+      String comment = line.substring(26);
       Comment.set(comment);
       Pair.set(PID, UID);
       context.write(Pair, Comment); //(<PID, UID>,  <Comment>)
@@ -152,9 +151,9 @@ public class TextSpamming extends Configured implements Tool {
 	    }
 	  }
   
-  protected static class MyPartitioner2 extends Partitioner<PairOfStrings, FloatWritable> {
+  protected static class MyPartitioner2 extends Partitioner<PairOfStrings, PairOfFloats> {
   @Override
-  public int getPartition(PairOfStrings key, FloatWritable value, int numReduceTasks) {
+  public int getPartition(PairOfStrings key, PairOfFloats value, int numReduceTasks) {
   		return (key.getLeftElement().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
   }
 }
@@ -384,8 +383,11 @@ public class TextSpamming extends Configured implements Tool {
     FileInputFormat.setInputPaths(job1, new Path(inputPath));
     FileOutputFormat.setOutputPath(job1, new Path(outputPath+"temp"));
 
-    job1.setOutputKeyClass(PairOfStrings.class);
-    job1.setOutputValueClass(Text.class);
+    job1.setMapOutputKeyClass(PairOfStrings.class);
+    job1.setMapOutputValueClass(Text.class);
+    
+    //job1.setOutputKeyClass(PairOfStrings.class);
+    //job1.setOutputValueClass(PairOfIntString.class);
     
     job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 
@@ -411,6 +413,9 @@ public class TextSpamming extends Configured implements Tool {
     FileInputFormat.setInputPaths(job2, new Path(outputPath+"temp"));
     FileOutputFormat.setOutputPath(job2, new Path(outputPath+"temp2"));
 
+    job2.setMapOutputKeyClass(PairOfStrings.class);
+    job2.setMapOutputValueClass(PairOfFloats.class);
+    
     job2.setOutputKeyClass(PairOfStrings.class);
     job2.setOutputValueClass(PairOfFloats.class);
     
@@ -440,8 +445,11 @@ public class TextSpamming extends Configured implements Tool {
     FileInputFormat.setInputPaths(job3, new Path(outputPath+"temp2"));
     FileOutputFormat.setOutputPath(job3, new Path(outputPath+"temp3"));
 
+    job3.setMapOutputKeyClass(PairOfStringInt.class);
+    job3.setMapOutputValueClass(PairOfStringFloat.class);
+    
     job3.setOutputKeyClass(PairOfStringInt.class);
-    job3.setOutputValueClass(PairOfStringFloat.class);
+    job3.setOutputValueClass(String2FloatOpenHashMapWritable.class);
     
     job3.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
     job3.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -468,8 +476,11 @@ public class TextSpamming extends Configured implements Tool {
     FileInputFormat.setInputPaths(job4, new Path(outputPath+"temp3"));
     FileOutputFormat.setOutputPath(job4, new Path(outputPath+"temp4"));
 
+    job4.setMapOutputKeyClass(Text.class);
+    job4.setMapOutputValueClass(String2FloatOpenHashMapWritable.class);
+    
     job4.setOutputKeyClass(Text.class);
-    job4.setOutputValueClass(String2FloatOpenHashMapWritable.class);
+    job4.setOutputValueClass(FloatWritable.class);
     
     job4.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
     job4.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -494,14 +505,17 @@ public class TextSpamming extends Configured implements Tool {
 
     job5.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job4, new Path(outputPath+"temp4"));
-    FileOutputFormat.setOutputPath(job4, new Path(outputPath));
+    FileInputFormat.setInputPaths(job5, new Path(outputPath+"temp4"));
+    FileOutputFormat.setOutputPath(job5, new Path(outputPath));
 
+    job5.setMapOutputKeyClass(Text.class);
+    job5.setMapOutputValueClass(FloatWritable.class);
+    
     job5.setOutputKeyClass(Text.class);
     job5.setOutputValueClass(FloatWritable.class);
     
     job5.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
-    job5.setOutputFormatClass(SequenceFileOutputFormat.class);
+    //job5.setOutputFormatClass(SequenceFileOutputFormat.class);
 
     job5.setMapperClass(MyMapper5.class);
     //job4.setPartitionerClass(MyPartitioner3.class);
@@ -514,7 +528,7 @@ public class TextSpamming extends Configured implements Tool {
 
     long startTime5 = System.currentTimeMillis();
     job4.waitForCompletion(true);
-    LOG.info("Job4 Finished in " + (System.currentTimeMillis() - startTime4) / 1000.0 + " seconds");
+    LOG.info("Job5 Finished in " + (System.currentTimeMillis() - startTime5) / 1000.0 + " seconds");
     
     
     return 0;

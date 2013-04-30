@@ -223,8 +223,11 @@ public class RatingSpamming extends Configured implements Tool {
     FileInputFormat.setInputPaths(job1, new Path(inputPath));
     FileOutputFormat.setOutputPath(job1, new Path(outputPath+"temp"));
 
+    job1.setMapOutputKeyClass(PairOfStrings.class);
+    job1.setMapOutputValueClass(IntWritable.class);
+    
     job1.setOutputKeyClass(PairOfStrings.class);
-    job1.setOutputValueClass(IntWritable.class);
+    job1.setOutputValueClass(PairOfFloats.class);
     
     job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 
@@ -254,7 +257,7 @@ public class RatingSpamming extends Configured implements Tool {
     job2.setOutputValueClass(PairOfFloats.class);
     
     job2.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
-    job2.setOutputFormatClass(SequenceFileOutputFormat.class);
+    //job2.setOutputFormatClass(SequenceFileOutputFormat.class);
 
     job2.setMapperClass(MyMapper2.class);
     job2.setCombinerClass(MyReducer2.class);
