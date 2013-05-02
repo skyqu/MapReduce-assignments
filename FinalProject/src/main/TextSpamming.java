@@ -15,6 +15,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -45,7 +46,7 @@ import edu.umd.cloud9.mapreduce.lib.input.NonSplitableSequenceFileInputFormat;
 public class TextSpamming extends Configured implements Tool {
   private static final Logger LOG = Logger.getLogger(TextSpamming.class);
 
-  // Mapper: emits (token, 1) for every word occurrence.
+  // Mapper: pack user id and product id into key, and comment into value
   private static class MyMapper extends Mapper<LongWritable, Text, PairOfStrings, Text> {
 
     // Reuse objects to save overhead of object creation.
@@ -56,15 +57,28 @@ public class TextSpamming extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
       String line = ((Text) value).toString();
-      String UID = line.substring(0, 14);
-      String PID = line.substring(15, 24);
-      String comment = line.substring(26);
+      String UID = line.substring(0, 14);    //the first 14 bits are user id
+      String PID = line.substring(14, 25);   //the 16 to 25 bits are product id
+      String comment = line.substring(25);   //starting from 27th bit it is comment
       Comment.set(comment);
+      String[] UIDt = UID.split("[\\s+\\t]+");    //filter out those space and tab. As the length of UID and PID may vary
+      UID=UIDt[0];
+      for(int i=1;i<UIDt.length;i++)
+      {
+    	  UID = (UID.length()>UIDt[i].length())?UID:UIDt[i];
+      }
+      String[] PIDt = PID.split("[\\s+\\t]+");
+      PID=PIDt[0];
+      for(int i=1;i<PIDt.length;i++)
+      {
+    	  PID = (PID.length()>PIDt[i].length())?PID:PIDt[i];
+      }
       Pair.set(PID, UID);
       context.write(Pair, Comment); //(<PID, UID>,  <Comment>)
     }
   }
 
+  // Mapper: emit Bigrams of each comment
   private static class MyMapper2 extends Mapper<PairOfStrings, PairOfIntString, PairOfStrings, PairOfFloats> {
 
 	    // Reuse objects to save overhead of object creation.
@@ -76,10 +90,11 @@ public class TextSpamming extends Configured implements Tool {
 	    @Override
 	    public void map(PairOfStrings key, PairOfIntString value, Context context)
 	        throws IOException, InterruptedException {
+	      MAP.clear();
 	      String UID = 	key.getRightElement();
 	      String PID = 	key.getLeftElement();
 	      int RID = value.getLeftElement();
-	      String[] comments = value.getRightElement().split("\\s+");
+	      String[] comments = value.getRightElement().split("[,.:;?!()<>{}~`\"\'\\s\\t]+");
 	      for(int i=0;i<comments.length-1;i++)
 	      {
 	    	  String temp = comments[i]+","+comments[i+1];
@@ -103,6 +118,7 @@ public class TextSpamming extends Configured implements Tool {
 	    }
 	  }
   
+  // Emit ID Triples and Bigrams
   private static class MyMapper3 extends Mapper<PairOfStrings, PairOfFloats, PairOfStringInt, PairOfStringFloat> {
 
 	    // Reuse objects to save overhead of object creation.
@@ -113,7 +129,7 @@ public class TextSpamming extends Configured implements Tool {
 	    public void map(PairOfStrings key, PairOfFloats value, Context context)
 	        throws IOException, InterruptedException {
 	    	String PIDUID = key.getRightElement();
-	    	String Bigram = key.getRightElement();
+	    	String Bigram = key.getLeftElement();
 	    	float tfidf = value.getRightElement();
 	    	int rid = (int)value.getLeftElement();
 	    	IDPair.set(PIDUID, rid);
@@ -136,14 +152,14 @@ public class TextSpamming extends Configured implements Tool {
 	    }
 	  }
   
-  private static class MyMapper5 extends Mapper<Text, FloatWritable, Text, FloatWritable> {
+  private static class MyMapper5 extends Mapper<Text, DoubleWritable, Text, DoubleWritable> {
 
 	    // Reuse objects to save overhead of object creation.
 	    private final static Text UID = new Text();
 	    //private final static PairOfStringFloat BigramPair = new PairOfStringFloat();
 
 	    @Override
-	    public void map(Text key, FloatWritable value, Context context)
+	    public void map(Text key, DoubleWritable value, Context context)
 	        throws IOException, InterruptedException {
 	    	String[] IDs=key.toString().split(",");
 	    	UID.set(IDs[1]);
@@ -166,7 +182,7 @@ public class TextSpamming extends Configured implements Tool {
 }
   
   
-  // Reducer: sums up all the counts.
+  // Reducer: rule out all UID PID pairs which has only one comment entrance
   private static class MyReducer extends Reducer<PairOfStrings, Text, PairOfStrings, PairOfIntString> {
 
     // Reuse objects.
@@ -184,16 +200,16 @@ public class TextSpamming extends Configured implements Tool {
       int counter=0;
       if(iter.hasNext())
       {
-    	  first = iter.next().toString();
+    	  first = iter.next().toString();      //buffer the first value of the current PID UID pairs
     	  counter++;
       }
-      while (iter.hasNext()) 
+      while (iter.hasNext()) 					// if there are additional comments, start emit these key-value pair
       {
     	  RID.set(counter, iter.next().toString());
     	  context.write(key, RID);
     	  counter++;
       }
-      if(counter>1)
+      if(counter>1)                       //if counter greater than one, i.e. more than one comments are t
       {
     	  RID.set(0, first);
     	  context.write(key, RID);
@@ -201,12 +217,14 @@ public class TextSpamming extends Configured implements Tool {
     }
   }
   
+  // compute TFIDF
   private static class MyReducer2 extends Reducer<PairOfStrings, PairOfFloats, PairOfStrings, PairOfFloats> {
 
 	    // Reuse objects.
 	    private static double IDF;
-	    private static final long Dnum=100000000;        //NEED the HARDCODE VALUE
+	    private static final long Dnum=2389;        //NEED the HARDCODE VALUE
 	    private static final PairOfFloats TFIDF = new PairOfFloats();
+	    private static PairOfFloats COPY = new PairOfFloats();
 
 	    @Override
 	    public void reduce(PairOfStrings key, Iterable<PairOfFloats> values, Context context)
@@ -219,18 +237,22 @@ public class TextSpamming extends Configured implements Tool {
 	    	  while(iter.hasNext())
 	    	  {
 	    		  IDF=IDF+1;
+	    		  iter.next();
 	    	  }
-	    	  IDF=Math.log(Dnum/IDF);
+	    	  if(IDF==0){IDF=1;}
+	    	  IDF=Math.log((double)Dnum/IDF);
 	      }else{
 	    	  while (iter.hasNext()) {
-	        	  float td = iter.next().getRightElement();
-	        	  TFIDF.set(iter.next().getLeftElement(),(float)IDF*td);
+	        	  COPY = iter.next().clone();
+	        	  TFIDF.set(COPY.getLeftElement(),(float)IDF*COPY.getRightElement());
 		    	  context.write(key, TFIDF);
 	    	  }
 	      }
 	      }
 	  }
   
+  
+  //merge bigrams with the same UID PID RID pairs
   private static class MyReducer3 extends Reducer<PairOfStringInt, PairOfStringFloat, PairOfStringInt, String2FloatOpenHashMapWritable> {
 
 	    // Reuse objects.
@@ -243,7 +265,7 @@ public class TextSpamming extends Configured implements Tool {
 	        throws IOException, InterruptedException {
 	      // Sum up values.
 	      Iterator<PairOfStringFloat> iter = values.iterator();
-	     
+	      MAP.clear();
 	      while(iter.hasNext())
 	      {
 	    	TEMP=iter.next().clone();
@@ -253,13 +275,16 @@ public class TextSpamming extends Configured implements Tool {
 	     }
 	  }
   
-  private static class MyReducer4 extends Reducer<Text, String2FloatOpenHashMapWritable, Text, FloatWritable> {
+  
+  
+  
+  private static class MyReducer4 extends Reducer<Text, String2FloatOpenHashMapWritable, Text, DoubleWritable> {
 
 	    // Reuse objects.
 
-	    private final static String2FloatOpenHashMapWritable MAP = new String2FloatOpenHashMapWritable();
-	    private static FloatWritable TEMP = new FloatWritable();
-	    private final static int window=10;
+	    //private final static String2FloatOpenHashMapWritable MAP = new String2FloatOpenHashMapWritable();
+	    private static DoubleWritable TEMP = new DoubleWritable();
+	    //private final static int window=10;
 	    private static ArrayList<String2FloatOpenHashMapWritable> List = new ArrayList<String2FloatOpenHashMapWritable>();
 
 	    @Override
@@ -268,6 +293,7 @@ public class TextSpamming extends Configured implements Tool {
 	      // Sum up values.
 	      Iterator<String2FloatOpenHashMapWritable> iter = values.iterator();
 	      double sim=0;
+	      List.clear();
 	      while(iter.hasNext())
 	      {
 	    	List.add(iter.next()); 
@@ -275,44 +301,45 @@ public class TextSpamming extends Configured implements Tool {
 	      int cardV=List.size();
 	      for(int i=0;i<cardV;i++)
 	      {
-	    	  float normi=0;
+	    	  double normi=0;
     		  for(String2FloatOpenHashMapWritable.Entry<String> e : List.get(i).object2FloatEntrySet())
     		  {
-    			 normi=normi+List.get(i).get(e)*List.get(i).get(e);
+    			 normi=normi+(double)List.get(i).get(e.getKey())*(double)List.get(i).get(e.getKey());
+    			 //System.out.print(normi+"\n");
     		  }
 	    	  for(int j=i+1;j<cardV;j++)
 	    	  {
-	    		  float inner=0;
-	    		  float normj=0;
+	    		  double inner=0;
+	    		  double normj=0;
 	    		  for(String2FloatOpenHashMapWritable.Entry<String> e : List.get(j).object2FloatEntrySet())
 	    		  {
-	    			 if(List.get(i).containsKey(e))
+	    			 normj=normj+(double)List.get(j).get(e.getKey())*(double)List.get(j).get(e.getKey());
+	    			 if(List.get(i).containsKey(e.getKey()))
 	    			 {
-	    				 inner=inner+List.get(i).get(e)*List.get(j).get(e);
+	    				 inner=inner+(double)List.get(i).get(e.getKey())*(double)List.get(j).get(e.getKey());
 	    			 }
-	    			 normj=normj+List.get(j).get(e)*List.get(j).get(e);
 	    		  }
 	    		  sim=sim+inner/(Math.sqrt(normj)*Math.sqrt(normi));
 	    	  }
 	      }
 	      sim=2*sim/(cardV*(cardV-1));
-	      TEMP.set((float)sim);
+	      TEMP.set(sim);
 	      context.write(key, TEMP);
 	     }
 	  }
 
-  private static class MyReducer5 extends Reducer<Text, FloatWritable, Text, FloatWritable> {
+  private static class MyReducer5 extends Reducer<Text, DoubleWritable, Text, DoubleWritable> {
 
 	    // Reuse objects.
-	    private final static FloatWritable VALUE = new FloatWritable();
+	    private final static DoubleWritable VALUE = new DoubleWritable();
 	    //private float marginal =0.0f;
 
 	    @Override
-	    public void reduce(Text key, Iterable<FloatWritable> values, Context context)
+	    public void reduce(Text key, Iterable<DoubleWritable> values, Context context)
 	        throws IOException, InterruptedException {
 	      // Sum up values.
-	    	float sim=0;
-	    	Iterator<FloatWritable> iter = values.iterator();
+	    	double sim=0;
+	    	Iterator<DoubleWritable> iter = values.iterator();
 	    	while (iter.hasNext()){
 	    		sim+=iter.next().get();
 	    	}
@@ -337,10 +364,10 @@ public class TextSpamming extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     Options options = new Options();
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
+    //options.addOption(OptionBuilder.withArgName("path").hasArg()
+      //  .withDescription("input path").create(INPUT));
+    //options.addOption(OptionBuilder.withArgName("path").hasArg()
+      //  .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("number of reducers").create(NUM_REDUCERS));
 
@@ -353,7 +380,7 @@ public class TextSpamming extends Configured implements Tool {
       System.err.println("Error parsing command line: " + exp.getMessage());
       return -1;
     }
-
+/*
     if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)) {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
@@ -361,10 +388,10 @@ public class TextSpamming extends Configured implements Tool {
       formatter.printHelp(this.getClass().getName(), options);
       ToolRunner.printGenericCommandUsage(System.out);
       return -1;
-    }
+    }*/
 
-    String inputPath = cmdline.getOptionValue(INPUT);
-    String outputPath = cmdline.getOptionValue(OUTPUT);
+    String inputPath = "xzzqskfinal/textspamming/part*";//cmdline.getOptionValue(INPUT);
+    String outputPath = "xzzqskfinal/TSScore"; //cmdline.getOptionValue(OUTPUT);
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
@@ -374,6 +401,12 @@ public class TextSpamming extends Configured implements Tool {
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
+    
+    conf.set("mapreduce.map.memory.mb", "2048");
+    conf.set("mapreduce.map.java.opts", "-Xmx2048m");
+    conf.set("mapreduce.reduce.memory.mb", "2048");
+    conf.set("mapreduce.reduce.java.opts", "-Xmx2048m");
+    
     Job job1 = Job.getInstance(conf);
     job1.setJobName(TextSpamming.class.getSimpleName());
     job1.setJarByClass(TextSpamming.class);
@@ -386,8 +419,8 @@ public class TextSpamming extends Configured implements Tool {
     job1.setMapOutputKeyClass(PairOfStrings.class);
     job1.setMapOutputValueClass(Text.class);
     
-    //job1.setOutputKeyClass(PairOfStrings.class);
-    //job1.setOutputValueClass(PairOfIntString.class);
+    job1.setOutputKeyClass(PairOfStrings.class);
+    job1.setOutputValueClass(PairOfIntString.class);
     
     job1.setOutputFormatClass(SequenceFileOutputFormat.class);
 
@@ -410,7 +443,7 @@ public class TextSpamming extends Configured implements Tool {
 
     job2.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job2, new Path(outputPath+"temp"));
+    FileInputFormat.setInputPaths(job2, new Path(outputPath+"temp/part*"));
     FileOutputFormat.setOutputPath(job2, new Path(outputPath+"temp2"));
 
     job2.setMapOutputKeyClass(PairOfStrings.class);
@@ -442,7 +475,7 @@ public class TextSpamming extends Configured implements Tool {
 
     job3.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job3, new Path(outputPath+"temp2"));
+    FileInputFormat.setInputPaths(job3, new Path(outputPath+"temp2/part*"));
     FileOutputFormat.setOutputPath(job3, new Path(outputPath+"temp3"));
 
     job3.setMapOutputKeyClass(PairOfStringInt.class);
@@ -473,14 +506,14 @@ public class TextSpamming extends Configured implements Tool {
 
     job4.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job4, new Path(outputPath+"temp3"));
+    FileInputFormat.setInputPaths(job4, new Path(outputPath+"temp3/part*"));
     FileOutputFormat.setOutputPath(job4, new Path(outputPath+"temp4"));
 
     job4.setMapOutputKeyClass(Text.class);
     job4.setMapOutputValueClass(String2FloatOpenHashMapWritable.class);
     
     job4.setOutputKeyClass(Text.class);
-    job4.setOutputValueClass(FloatWritable.class);
+    job4.setOutputValueClass(DoubleWritable.class);
     
     job4.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
     job4.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -505,14 +538,14 @@ public class TextSpamming extends Configured implements Tool {
 
     job5.setNumReduceTasks(reduceTasks);
 
-    FileInputFormat.setInputPaths(job5, new Path(outputPath+"temp4"));
+    FileInputFormat.setInputPaths(job5, new Path(outputPath+"temp4/part*"));
     FileOutputFormat.setOutputPath(job5, new Path(outputPath));
 
     job5.setMapOutputKeyClass(Text.class);
-    job5.setMapOutputValueClass(FloatWritable.class);
+    job5.setMapOutputValueClass(DoubleWritable.class);
     
     job5.setOutputKeyClass(Text.class);
-    job5.setOutputValueClass(FloatWritable.class);
+    job5.setOutputValueClass(DoubleWritable.class);
     
     job5.setInputFormatClass(NonSplitableSequenceFileInputFormat.class);
     //job5.setOutputFormatClass(SequenceFileOutputFormat.class);
@@ -527,7 +560,7 @@ public class TextSpamming extends Configured implements Tool {
     FileSystem.get(conf).delete(outputDir5, true);
 
     long startTime5 = System.currentTimeMillis();
-    job4.waitForCompletion(true);
+    job5.waitForCompletion(true);
     LOG.info("Job5 Finished in " + (System.currentTimeMillis() - startTime5) / 1000.0 + " seconds");
     
     
